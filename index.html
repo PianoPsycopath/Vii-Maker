@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Villager Maker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="plaza-mode plaza-hold">
+  <div id="introScreen" role="button" tabindex="0" aria-label="Click to begin">
+    <img id="introLogo" src="/img/logo.png" alt="Villager Maker" onerror="this.style.display='none'">
+    <span id="introHint">Click to begin</span>
+  </div>
+
+  <canvas id="plazaCv" aria-label="Villager plaza. Pick a villager to edit."></canvas>
+  <div id="plazaLabels"></div>
+  <div id="plazaHint"><strong>Villager Plaza</strong><span>Pick a villager to edit</span></div>
+  <button id="paradeBtn" class="mii-btn plaza-only" aria-pressed="false" title="Villagers march across the plaza; new random ones replace them as they walk off screen">Parade OFF</button>
+
+  <header class="mii-topbar">
+    <nav class="mii-tabs" role="tablist" aria-label="Editor categories">
+      <button class="mii-tab active" role="tab" data-tab="tab-plaza" title="Villager Plaza" aria-label="Villager Plaza">
+        <img src="/img/icons/name.png" alt="">
+      </button>
+      <button class="mii-tab" role="tab" data-tab="tab-id" title="Body: Gender, Lock, Height &amp; Skin Tone" aria-label="Body: Gender, Lock, Height &amp; Skin Tone">
+        <img src="/img/icons/MM_Height_Short.svg" alt="">
+      </button>
+      <button class="mii-tab soon" role="tab" data-tab="tab-face" title="Face (coming soon)" aria-label="Face (coming soon)">
+        <img src="/img/icons/MM_Face_1.svg" alt="">
+      </button>
+      <button class="mii-tab" role="tab" data-tab="tab-hair" title="Hair" aria-label="Hair">
+        <img src="/img/icons/MM_Hair_1.svg" alt="">
+      </button>
+      <button class="mii-tab soon" role="tab" data-tab="tab-brows" title="Eyebrows (coming soon)" aria-label="Eyebrows (coming soon)">
+        <img src="/img/icons/MM_Eyebrows_1.svg" alt="">
+      </button>
+      <button class="mii-tab" role="tab" data-tab="tab-eyes" title="Eyes" aria-label="Eyes">
+        <img src="/img/icons/MM_Eyes_1.svg" alt="">
+      </button>
+      <button class="mii-tab" role="tab" data-tab="tab-nose" title="Nose" aria-label="Nose">
+        <img src="/img/icons/MM_Nose_1.svg" alt="">
+      </button>
+      <button class="mii-tab soon" role="tab" data-tab="tab-mouth" title="Mouth (coming soon)" aria-label="Mouth (coming soon)">
+        <img src="/img/icons/MM_Mouth_23.svg" alt="">
+      </button>
+      <button class="mii-tab soon" role="tab" data-tab="tab-glasses" title="Glasses (coming soon)" aria-label="Glasses (coming soon)">
+        <img src="/img/icons/MM_Glasses_5.svg" alt="">
+      </button>
+      <button class="mii-tab" role="tab" data-tab="tab-outfit" title="Outfit &amp; Profession" aria-label="Outfit &amp; Profession">
+        <img src="/img/icons/outfit.png" data-fallbacks="/img/icons/shirt.png,/img/icons/clothes.png,/img/icons/color.png" alt="">
+      </button>
+      <button class="mii-tab" role="tab" data-tab="tab-export" title="Save &amp; Export" aria-label="Save &amp; Export">
+        <img src="/img/icons/export.png" data-fallbacks="/img/icons/save.png,/img/icons/download.png" alt="">
+      </button>
+    </nav>
+  </header>
+
+  <div class="mii-body">
+    <main id="stage">
+      <div class="top">
+        <div class="name-pill-container">
+          <input type="text" id="name" placeholder="Type a name (or clear for unnamed)" aria-label="Villager name" autocomplete="off" spellcheck="false">
+          <span id="chip"></span>
+        </div>
+      </div>
+      <div class="audio-btns">
+        <button id="musicBtn" class="mii-btn small sound-toggle" title="Toggle Background Music" aria-label="Toggle Background Music">
+          <span class="music-icon">🎵</span> Music ON
+        </button>
+        <button id="soundBtn" class="mii-btn small sound-toggle" title="Toggle Sound Effects" aria-label="Toggle Sound Effects">
+          <span class="sound-icon">🔊</span> SFX ON
+        </button>
+      </div>
+      <canvas id="cv" aria-label="Villager preview"></canvas>
+      <div class="stage-btns">
+        <button id="save" class="mii-btn" title="Save this villager">Save</button>
+        <button id="viewPlaza" class="mii-btn gold" title="Go back to the villager plaza and pick someone else">Plaza</button>
+      </div>
+      <div id="status"></div>
+    </main>
+
+    <aside id="edit">
+      <div class="sec tab-content" id="tab-plaza">
+        <div class="lab">Villager Plaza <span id="count"></span></div>
+        <input type="search" id="q" placeholder="Search names..." aria-label="Search names">
+        <div class="seg filter-seg">
+          <button data-f="all" aria-pressed="true">All</button>
+          <button data-f="edited" aria-pressed="false">Edited</button>
+          <button data-f="special" aria-pressed="false">★ Special</button>
+        </div>
+        <div id="list" role="list"></div>
+      </div>
+
+      <div class="sec tab-content" id="tab-id" hidden>
+        <div class="lab">Gender &amp; Height <span id="typeL"></span></div>
+        <div class="seg" id="genderS">
+          <button data-k="m" class="gender-btn">♂ Male</button>
+          <button data-k="f" class="gender-btn">♀ Female</button>
+        </div>
+        <button id="specBtn" class="mii-btn spec-pill" title="Special villagers lock their exact CSV colors and ignore the 6 × Profession shift">
+          ★ Special (Locked)
+        </button>
+        <div class="lab sub">Height <span id="htL"></span></div>
+        <div class="height-slider-box">
+          <img class="ht-ico" src="/img/icons/MM_Height_Short.svg" alt="Short" style="--h:30px">
+          <input type="range" id="ht" min="1" max="34" aria-label="Height">
+          <img class="ht-ico" src="/img/icons/MM_Height_Tall.svg" alt="Tall" style="--h:40px">
+        </div>
+        <div class="lab sub">Skin Tone <span id="skinToneL"></span></div>
+        <div class="grid" id="skinToneG"></div>
+      </div>
+
+      <div class="sec tab-content" id="tab-face" hidden>
+        <div class="lab">Face</div>
+        <div class="soon-note">Coming soon</div>
+      </div>
+
+      <div class="sec tab-content" id="tab-brows" hidden>
+        <div class="lab">Eyebrows</div>
+        <div class="soon-note">Coming soon</div>
+      </div>
+
+      <div class="sec tab-content" id="tab-nose" hidden>
+        <div class="lab">Nose Style <span id="noseL"></span></div>
+        <div class="seg" id="noseS"></div>
+      </div>
+
+      <div class="sec tab-content" id="tab-mouth" hidden>
+        <div class="lab">Mouth</div>
+        <div class="soon-note">Coming soon</div>
+      </div>
+
+      <div class="sec tab-content" id="tab-glasses" hidden>
+        <div class="lab">Glasses</div>
+        <div class="soon-note">Coming soon</div>
+      </div>
+
+      <div class="sec tab-content" id="tab-eyes" hidden>
+        <div class="lab">Eye Style <span id="eyesL"></span></div>
+        <div class="seg" id="eyesS"></div>
+        <div class="lab sub">Eye Color</div>
+        <div class="grid" id="eyesG"></div>
+      </div>
+
+      <div class="sec tab-content" id="tab-hair" hidden>
+        <div class="lab">Hair Style <span id="hairL"></span></div>
+        <div class="seg" id="hairS"></div>
+        <div class="lab sub">Hair Color</div>
+        <div class="grid" id="hairG"></div>
+      </div>
+
+      <div class="sec tab-content" id="tab-outfit" hidden>
+        <div class="lab">Outfit Color <span id="outL"></span></div>
+        <div class="grid" id="outG"></div>
+
+        <div class="lab sub">Profession <span id="profL"></span></div>
+        <div class="tex-grid" id="profG" role="group" aria-label="Profession"></div>
+
+        <div class="lab sub">Biome Outfit <span id="biomeL"></span></div>
+        <div class="tex-grid" id="biomeG" role="group" aria-label="Biome"></div>
+
+        <div class="lab sub">Base Skin <span id="skinL"></span></div>
+        <div class="tex-grid" id="skinG" role="group" aria-label="Skin ID variant (0-5)"></div>
+
+        <div class="lab sub">Trade Tier &amp; Preview <span>6 skins × 15 jobs</span></div>
+        <select id="tier" aria-label="Trade tier"></select>
+        <label class="chk" style="margin-top:10px">
+          <input type="checkbox" id="simShift" checked> Preview 6 × Profession shift
+        </label>
+        <label class="chk" style="margin-top:6px">
+          <input type="checkbox" id="spin"> Slow turntable
+        </label>
+        <div class="badge" id="shiftInfo"></div>
+      </div>
+
+      <div class="sec tab-content" id="tab-export" hidden>
+        <div class="lab">Manage &amp; Export</div>
+        <div class="acts">
+          <button id="reset" class="mii-btn">Reset to Sheet</button>
+          <button id="rand" class="mii-btn">🎲 Randomize</button>
+          <button class="mii-btn gold" id="expRP" title="Generate villager_v2.entity.json and villager_v2.render_controllers.json">Export Bedrock RP (.json)</button>
+          <button id="expCSV" class="mii-btn" title="Export full Villager Names CSV including edits">Export CSV</button>
+          <button id="exp" class="mii-btn">Export Edits</button>
+          <button id="expAll" class="mii-btn">Export All</button>
+          <button id="imp" class="mii-btn">Import</button>
+          <input type="file" id="file" accept=".json,.csv" hidden>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

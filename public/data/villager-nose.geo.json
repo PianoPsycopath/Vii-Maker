@@ -1,0 +1,285 @@
+{
+  "format_version": "1.8.0",
+  "geometry.villager_nose_default": {
+    "texturewidth": 64,
+    "textureheight": 64,
+    "visible_bounds_width": 1.5,
+    "visible_bounds_height": 2.5,
+    "visible_bounds_offset": [
+      0,
+      1.25,
+      0
+    ],
+    "bones": [
+      {
+        "name": "body"
+      },
+      {
+        "name": "head",
+        "parent": "body",
+        "pivot": [
+          0,
+          24,
+          0
+        ]
+      },
+      {
+        "name": "nose",
+        "parent": "head",
+        "pivot": [
+          0,
+          26,
+          0
+        ],
+        "cubes": [
+          {
+            "origin": [
+              -1,
+              23,
+              -6
+            ],
+            "size": [
+              2,
+              4,
+              2
+            ],
+            "uv": [
+              24,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "geometry.villager_nose_button": {
+    "texturewidth": 64,
+    "textureheight": 64,
+    "visible_bounds_width": 1.5,
+    "visible_bounds_height": 2.5,
+    "visible_bounds_offset": [
+      0,
+      1.25,
+      0
+    ],
+    "bones": [
+      {
+        "name": "body"
+      },
+      {
+        "name": "head",
+        "parent": "body",
+        "pivot": [
+          0,
+          24,
+          0
+        ]
+      },
+      {
+        "name": "nose",
+        "parent": "head",
+        "pivot": [
+          0,
+          26,
+          0
+        ],
+        "cubes": [
+          {
+            "origin": [
+              -1,
+              25,
+              -6
+            ],
+            "size": [
+              2,
+              2,
+              2
+            ],
+            "uv": [
+              24,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "geometry.villager_nose_big": {
+    "texturewidth": 64,
+    "textureheight": 64,
+    "visible_bounds_width": 1.5,
+    "visible_bounds_height": 2.5,
+    "visible_bounds_offset": [
+      0,
+      1.25,
+      0
+    ],
+    "bones": [
+      {
+        "name": "body"
+      },
+      {
+        "name": "head",
+        "parent": "body",
+        "pivot": [
+          0,
+          24,
+          0
+        ]
+      },
+      {
+        "name": "nose",
+        "parent": "head",
+        "pivot": [
+          0,
+          26,
+          0
+        ],
+        "cubes": [
+          {
+            "origin": [
+              -1,
+              22.5,
+              -6
+            ],
+            "size": [
+              2,
+              4,
+              2
+            ],
+            "uv": [
+              24,
+              0
+            ],
+            "inflate": 0.5
+          }
+        ]
+      }
+    ]
+  },
+  "geometry.villager_nose_witch": {
+    "texturewidth": 64,
+    "textureheight": 64,
+    "visible_bounds_width": 1.5,
+    "visible_bounds_height": 2.5,
+    "visible_bounds_offset": [
+      0,
+      1.25,
+      0
+    ],
+    "bones": [
+      {
+        "name": "body"
+      },
+      {
+        "name": "head",
+        "parent": "body",
+        "pivot": [
+          0,
+          24,
+          0
+        ]
+      },
+      {
+        "name": "nose",
+        "parent": "head",
+        "pivot": [
+          0,
+          26,
+          0
+        ],
+        "cubes": [
+          {
+            "origin": [
+              -1,
+              23,
+              -6
+            ],
+            "size": [
+              2,
+              4,
+              2
+            ],
+            "uv": [
+              24,
+              0
+            ]
+          },
+          {
+            "origin": [
+              1,
+              23,
+              -6
+            ],
+            "size": [
+              1,
+              1,
+              1
+            ],
+            "uv": [
+              24,
+              6
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "geometry.villager_nose_pointy": {
+    "texturewidth": 64,
+    "textureheight": 64,
+    "visible_bounds_width": 1.5,
+    "visible_bounds_height": 2.5,
+    "visible_bounds_offset": [
+      0,
+      1.25,
+      0
+    ],
+    "bones": [
+      {
+        "name": "body"
+      },
+      {
+        "name": "head",
+        "parent": "body",
+        "pivot": [
+          0,
+          24,
+          0
+        ]
+      },
+      {
+        "name": "nose",
+        "parent": "head",
+        "pivot": [
+          0,
+          25.25,
+          -5
+        ],
+        "bind_pose_rotation": [
+          -30,
+          0,
+          0
+        ],
+        "cubes": [
+          {
+            "origin": [
+              -1,
+              23.25,
+              -6
+            ],
+            "size": [
+              2,
+              4,
+              2
+            ],
+            "uv": [
+              24,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
