@@ -180,7 +180,12 @@
         <div class="acts">
           <button id="reset" class="mii-btn">Reset to Sheet</button>
           <button id="rand" class="mii-btn">🎲 Randomize</button>
-          <button class="mii-btn gold" id="expRP" title="Generate villager_v2.entity.json and villager_v2.render_controllers.json">Export Bedrock RP (.json)</button>
+          <select id="expMode" aria-label="Bedrock export mode">
+            <option value="simple" title="One zip with the entity, render controllers and geometry JSON files">Simple: JSON + geometry zip</option>
+            <option value="weave" title="Write straight into an existing resource pack folder. Overwrites files except manifest.json">Weave: into existing pack</option>
+            <option value="full" title="A standalone resource pack with manifest and every texture">Full: .mcaddon with textures</option>
+          </select>
+          <button class="mii-btn gold" id="expRP" title="Export the villager entity, render controllers, geometry and (weave/full) textures">Export Bedrock RP</button>
           <button id="expCSV" class="mii-btn" title="Export full Villager Names CSV including edits">Export CSV</button>
           <button id="exp" class="mii-btn">Export Edits</button>
           <button id="expAll" class="mii-btn">Export All</button>

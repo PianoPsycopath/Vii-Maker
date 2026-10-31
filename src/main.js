@@ -10,12 +10,15 @@ import {
   playSelect, playTab, playSave, toggleMute, loadMusic,
   playIntro, startMusic, setMusicScene, setMusicEnabled, isMusicEnabled, loadSfx
 } from './sound.js';
-import { zipSync, strToU8 } from 'fflate';
+import {
+  buildBedrockFiles, loadTextures, describeMissingTextures, pickResourcePackRoot,
+  zipSimple, zipAddon, weaveIntoPack, toFileText
+} from './packExport.js';
+import { createComposer } from './composer.js';
+import { generatePackIcon, PACK_ICON_VILLAGER } from './packIcon.js';
 import { PlazaScene } from './plaza.js';
 import { EditorState } from './core/EditorState.js';
 import { UIController } from './ui/UIController.js';
-
-const toFileText = content => (typeof content === 'string' ? content : JSON.stringify(content, null, 2));
 
 function triggerDownload(content, filename) {
   const anchor = document.createElement('a');
@@ -23,7 +26,7 @@ function triggerDownload(content, filename) {
   anchor.href = URL.createObjectURL(new Blob([payload], { type: 'application/octet-stream' }));
   anchor.download = filename;
   anchor.click();
-  URL.revokeObjectURL(anchor.href);
+  setTimeout(() => URL.revokeObjectURL(anchor.href), 10000);
 }
 
 class VillagerMakerApp {
@@ -35,6 +38,7 @@ class VillagerMakerApp {
     this.viewer = null;
     this.plazaApi = null;
     this.isParadeActive = false;
+    this.iconComposer = null;
   }
 
   async initialize() {
@@ -124,7 +128,7 @@ class VillagerMakerApp {
       onExportEdits: () => triggerDownload(this.appData.over, 'villager-edits.json'),
       onExportAll: () => this.exportAllVillagers(),
       onExportCSV: () => this.exportCSV(),
-      onExportRP: () => this.exportBedrockRP(),
+      onExportRP: mode => this.exportBedrockRP(mode),
       onImportFile: file => this.importVillagerFile(file),
       onToggleParade: () => this.toggleParade(),
       onRequestPlaza: () => this.reopenPlaza(),
@@ -267,35 +271,68 @@ class VillagerMakerApp {
     this.ui.setStatus('Exported Villager Names - Sheet1.csv.');
   }
 
-  exportBedrockRP() {
-    const { entityJson, rcJson, stats } = generateBedrockFiles(
-      this.appData.M,
-      this.appData.base,
-      this.appData.over,
-      this.state.lookup.bind(this.state),
-      this.lookups
-    );
+  async exportBedrockRP(mode = 'simple') {
+    try {
+      const root = mode === 'weave' ? await pickResourcePackRoot() : null;
 
-    const files = {
-      'villager_v2.entity.json': strToU8(toFileText(entityJson)),
-      'villager_v2.render_controllers.json': strToU8(toFileText(rcJson))
-    };
+      const { json, texturePaths, stats } = buildBedrockFiles({
+        manifest: this.appData.M,
+        base: this.appData.base,
+        over: this.appData.over,
+        lookup: this.state.lookup.bind(this.state),
+        lookups: this.lookups,
+        GEO: this.appData.GEO
+      });
+      const counts = `${stats.regularCount} shifted regulars + ${stats.specialCount} locked specials`;
 
-    const noseGeos = Object.fromEntries(
-      Object.entries(this.appData.GEO).filter(([key]) => key.startsWith('geometry.villager_nose_'))
-    );
-    if (Object.keys(noseGeos).length) {
-      files['villager_nose.geo.json'] = strToU8(toFileText({
-        format_version: this.appData.GEO.format_version || '1.8.0',
-        ...noseGeos
-      }));
+      if (mode === 'simple') {
+        triggerDownload(zipSimple(json), 'villager_bedrock_rp.zip');
+        this.ui.setStatus(`Exported villager_bedrock_rp.zip (${counts}).`);
+        return;
+      }
+
+      this.ui.setStatus('Collecting textures...');
+      const { files, missing } = await loadTextures(texturePaths);
+      if (!Object.keys(files).length) {
+        throw new Error('No textures could be loaded, so nothing was written. Check the texture location.');
+      }
+      const missingNote = describeMissingTextures(missing);
+
+      if (mode === 'weave') {
+        const written = await weaveIntoPack(root, json, files);
+        this.ui.setStatus(`Wove ${written} files into "${root.name}" (${counts}).${missingNote}`);
+      } else {
+        const icon = await this.buildPackIcon();
+        const packFiles = icon.bytes ? { ...files, 'pack_icon.png': icon.bytes } : files;
+        triggerDownload(zipAddon(json, packFiles), 'Vii-Maker_Villagers.mcaddon');
+        this.ui.setStatus(`Exported Vii-Maker_Villagers.mcaddon (${counts}).${missingNote}${icon.note}`);
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        this.ui.setStatus('Export cancelled.');
+        return;
+      }
+      console.error('Bedrock export failed', error);
+      this.ui.setStatus(`Export failed: ${error.message}`);
     }
+  }
 
-    triggerDownload(zipSync(files), 'villager_bedrock_rp.zip');
-
-    this.ui.setStatus(
-      `Exported villager_bedrock_rp.zip (${stats.regularCount} shifted regulars + ${stats.specialCount} locked specials).`
-    );
+  async buildPackIcon() {
+    try {
+      this.iconComposer ??= createComposer({ M: this.appData.M, lookups: this.lookups });
+      const bytes = await generatePackIcon({
+        GEO: this.appData.GEO,
+        M: this.appData.M,
+        composer: this.iconComposer,
+        lookup: this.state.lookup.bind(this.state)
+      });
+      return bytes
+        ? { bytes, note: '' }
+        : { bytes: null, note: ` No pack icon: villager "${PACK_ICON_VILLAGER.name}" not found.` };
+    } catch (error) {
+      console.warn('Pack icon failed', error);
+      return { bytes: null, note: ' Pack icon could not be generated.' };
+    }
   }
 
   async importVillagerFile(file) {

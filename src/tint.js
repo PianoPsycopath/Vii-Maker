@@ -23,7 +23,7 @@ const RESOURCE_PATH = 'textures/entity/villager2';
 export const TEX = {
   hair: (style) => `${RESOURCE_PATH}/hair/${style}-`,
   hairBald: `${RESOURCE_PATH}/hair/bald`,
-  nose: (style) => `${RESOURCE_PATH}/nose/${style}_nose`,
+  nose: (style) => `${RESOURCE_PATH}/nose/${style === 'witch' ? 'witch' : 'default'}_nose`,
   skin: `${RESOURCE_PATH}/villager_skin`,
   outfit: (biome) => `${RESOURCE_PATH}/biomes/biome_${biome}-`,
   shoes: (biome) => `${RESOURCE_PATH}/biomes/biome_${biome}-shoes`,

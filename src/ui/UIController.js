@@ -69,6 +69,7 @@ const ELEMENT_SELECTORS = {
   tierSelect: '#tier',
   resetBtn: '#reset',
   randomBtn: '#rand',
+  exportModeSelect: '#expMode',
   exportRPBtn: '#expRP',
   exportCSVBtn: '#expCSV',
   exportEditsBtn: '#exp',
@@ -336,7 +337,13 @@ export class UIController {
     elements.exportEditsBtn.onclick = () => { playSelect(); callbacks.onExportEdits(); };
     elements.exportAllBtn.onclick = () => { playSelect(); callbacks.onExportAll(); };
     elements.exportCSVBtn.onclick = () => { playSelect(); callbacks.onExportCSV(); };
-    elements.exportRPBtn.onclick = () => { playSave(); callbacks.onExportRP(); };
+    elements.exportRPBtn.onclick = () => { playSave(); callbacks.onExportRP(elements.exportModeSelect.value); };
+
+    if (typeof window.showDirectoryPicker !== 'function') {
+      const weaveOption = elements.exportModeSelect.querySelector('option[value="weave"]');
+      weaveOption.disabled = true;
+      weaveOption.textContent += ' (Chrome/Edge only)';
+    }
 
     elements.importBtn.onclick = () => {
       playSelect();
