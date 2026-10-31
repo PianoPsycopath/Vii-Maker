@@ -13,9 +13,9 @@ import {
 import {
   buildBedrockFiles, loadTextures, describeMissingTextures, pickResourcePackRoot,
   zipSimple, zipAddon, weaveIntoPack, toFileText
-} from './packExport.js';
+} from './PackExport.js';
 import { createComposer } from './composer.js';
-import { generatePackIcon, PACK_ICON_VILLAGER } from './packIcon.js';
+import { generatePackIcon, PACK_ICON_VILLAGER } from './PackIcon.js';
 import { PlazaScene } from './plaza.js';
 import { EditorState } from './core/EditorState.js';
 import { UIController } from './ui/UIController.js';
