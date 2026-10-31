@@ -32,6 +32,9 @@ const ELEMENT_SELECTORS = {
   musicBtn: '#musicBtn',
   soundBtn: '#soundBtn',
   stage: '#stage',
+  editPanel: '#edit',
+  exportPanel: '#exportPanel',
+  carryCanvas: '#carryCv',
   canvas: '#cv',
   spinCheckbox: '#spin',
   simShiftCheckbox: '#simShift',
@@ -99,6 +102,10 @@ export class UIController {
     this.lastEyeStyle = null;
 
     this.elements = this.queryElements();
+    this.elements.carrySlots = Object.fromEntries(
+      [...document.querySelectorAll('[data-carry]')].map(slot => [slot.dataset.carry, slot])
+    );
+    window.addEventListener('resize', () => this.updateExportShift());
   }
 
   queryElements() {
@@ -123,6 +130,7 @@ export class UIController {
     this.buildStaticGrids();
     this.bindEvents();
     bindHoverSounds(this.elements.body);
+    this.updateExportShift();
   }
 
   injectIcons() {
@@ -345,6 +353,7 @@ export class UIController {
       const open = !elements.shareTree.classList.contains('open');
       elements.shareTree.classList.toggle('open', open);
       elements.shareBtn.setAttribute('aria-expanded', String(open));
+      callbacks.onShareToggle?.(open);
     };
 
     elements.exportEditsBtn.onclick = () => { playSelect(); callbacks.onExportEdits(); };
@@ -386,16 +395,65 @@ export class UIController {
     document.querySelectorAll('.mii-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.tab === targetId);
     });
-    document.querySelectorAll('.tab-content').forEach(section => {
-      section.hidden = section.id !== targetId;
-    });
+    const isExport = targetId === 'tab-export';
+    if (!isExport) {
+      document.querySelectorAll('#edit .tab-content').forEach(section => {
+        section.hidden = section.id !== targetId;
+      });
+    }
 
     this.activeTab = targetId;
-    this.elements.body.classList.toggle('export-view', targetId === 'tab-export');
+    const wasExport = this.elements.body.classList.contains('export-view');
+    if (isExport !== wasExport) {
+      this.updateExportShift();
+      if (instant) this.skipExportSlide();
+    }
+    this.elements.body.classList.toggle('export-view', isExport);
+    if (isExport !== wasExport) this.callbacks.onExportViewChange?.(isExport, instant);
     const focusTarget = TAB_FOCUS_MAP[targetId] || 'full';
     this.callbacks.onTabChange(focusTarget, instant);
 
     if (!quiet) playTab();
+  }
+
+  updateExportShift() {
+    const { body, stage, editPanel } = this.elements;
+    const holder = stage.parentElement;
+    const bounds = holder.getBoundingClientRect();
+    const stacked = window.matchMedia('(max-width: 900px)').matches;
+    const width = editPanel.offsetWidth;
+    let left, top, height, stageX = 0, stageY = 0;
+
+    if (stacked) {
+      left = editPanel.offsetLeft;
+      top = stage.offsetTop + 44; // leaves room for the music buttons
+      height = Math.min(editPanel.offsetHeight, holder.clientHeight - top - 8);
+      stageY = -(stage.offsetTop + stage.offsetHeight + 12);
+    } else {
+      left = (holder.clientWidth - width) / 2;
+      top = editPanel.offsetTop;
+      height = editPanel.offsetHeight;
+      stageX = -(stage.offsetLeft + stage.offsetWidth + 24);
+    }
+
+    const offRight = panelLeft => window.innerWidth - (bounds.left + panelLeft) + 32;
+
+    const { style } = body;
+    style.setProperty('--exp-left', `${left}px`);
+    style.setProperty('--exp-top', `${top}px`);
+    style.setProperty('--exp-w', `${width}px`);
+    style.setProperty('--exp-h', `${height}px`);
+    style.setProperty('--exp-off', `${offRight(left)}px`);
+    style.setProperty('--ed-off', `${offRight(editPanel.offsetLeft)}px`);
+    style.setProperty('--st-x', `${stageX}px`);
+    style.setProperty('--st-y', `${stageY}px`);
+    style.setProperty('--audio-top', `${Math.max(0, bounds.top) + 6}px`);
+  }
+
+  skipExportSlide() {
+    const { classList } = this.elements.body;
+    classList.add('export-instant');
+    requestAnimationFrame(() => requestAnimationFrame(() => classList.remove('export-instant')));
   }
 
   resetStyleCache() {

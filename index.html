@@ -59,12 +59,6 @@
 
   <div class="mii-body">
     <main id="stage">
-      <div class="top">
-        <div class="name-pill-container">
-          <input type="text" id="name" placeholder="Type a name (or clear for unnamed)" aria-label="Villager name" autocomplete="off" spellcheck="false">
-          <span id="chip"></span>
-        </div>
-      </div>
       <div class="audio-btns">
         <button id="musicBtn" class="mii-btn small sound-toggle" title="Toggle Background Music" aria-label="Toggle Background Music">
           <span class="music-icon">🎵</span> Music ON
@@ -73,15 +67,23 @@
           <span class="sound-icon">🔊</span> SFX ON
         </button>
       </div>
-      <canvas id="cv" aria-label="Villager preview"></canvas>
-      <div class="stage-btns">
-        <button id="save" class="mii-btn" title="Save this villager">Save</button>
-        <button id="viewPlaza" class="mii-btn gold" title="Go back to the villager plaza and pick someone else">Plaza</button>
+      <div class="stage-slide">
+        <div class="top">
+          <div class="name-pill-container">
+            <input type="text" id="name" placeholder="Type a name (or clear for unnamed)" aria-label="Villager name" autocomplete="off" spellcheck="false">
+            <span id="chip"></span>
+          </div>
+        </div>
+        <canvas id="cv" aria-label="Villager preview"></canvas>
+        <div class="stage-btns">
+          <button id="save" class="mii-btn" title="Save this villager">Save</button>
+          <button id="viewPlaza" class="mii-btn gold" title="Go back to the villager plaza and pick someone else">Plaza</button>
+        </div>
+        <div id="status"></div>
       </div>
-      <div id="status"></div>
     </main>
 
-    <aside id="edit">
+    <aside id="edit" class="slide-panel">
       <div class="sec tab-content" id="tab-plaza">
         <div class="lab">Villager Plaza <span id="count"></span></div>
         <input type="search" id="q" placeholder="Search names..." aria-label="Search names">
@@ -174,8 +176,10 @@
         </label>
         <div class="badge" id="shiftInfo"></div>
       </div>
+    </aside>
 
-      <div class="sec tab-content" id="tab-export" hidden>
+    <aside id="exportPanel" class="slide-panel" aria-label="Save &amp; Export">
+      <div class="sec tab-content" id="tab-export">
         <div class="lab">Export</div>
         <div class="export-grid">
           <button class="big-btn primary" id="expRP" title="Export the villager entity, render controllers, geometry and (weave/full) textures">
@@ -189,7 +193,7 @@
           </select>
 
           <button class="big-btn" id="shareBtn" aria-expanded="false" aria-controls="shareTree" title="Share villager edits">
-            <span class="big-ico mask-ico" style="--src:url('/img/icons/share.png')"></span>
+            <span class="big-ico carry-icon"><canvas id="carryCv" aria-hidden="true"></canvas></span>
             <span class="big-label">Share</span>
           </button>
           <button class="big-btn dice" id="rand" title="Randomize this villager">
@@ -205,17 +209,17 @@
             <div class="tree-inner">
               <div class="tree-node" style="--i:0">
                 <button class="tree-btn" id="exp" title="Download only the villagers you changed">
-                  <span class="tree-ico mask-ico" style="--src:url('/img/icons/share.png')"></span><span>Export Edits</span>
+                  <span class="tree-ico carry-slot" data-carry="edits"></span><span>Export Edits</span>
                 </button>
               </div>
               <div class="tree-node" style="--i:1">
                 <button class="tree-btn" id="expAll" title="Download every villager, edited or not">
-                  <span class="tree-ico mask-ico" style="--src:url('/img/icons/share.png')"></span><span>Export All</span>
+                  <span class="tree-ico carry-slot" data-carry="all"></span><span>Export All</span>
                 </button>
               </div>
               <div class="tree-node" style="--i:2">
                 <button class="tree-btn" id="imp" title="Load a villager JSON export or sheet CSV">
-                  <span class="tree-ico mask-ico flip" style="--src:url('/img/icons/share.png')"></span><span>Import</span>
+                  <span class="tree-ico carry-slot" data-carry="import"></span><span>Import</span>
                 </button>
               </div>
             </div>

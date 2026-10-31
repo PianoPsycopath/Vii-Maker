@@ -159,5 +159,8 @@ export function initViewer({ canvas, stageEl, spinCheckbox, GEO, M, lookups }) {
   const renderThumbnails = async () =>
     renderThumbnailSets({ GEO, M, composer, noseTextures: await noseTexturesReady });
 
-  return { compose, setHeight, setNose: rig.nose.setStyle, focus, renderThumbnails };
+  return {
+    compose, setHeight, setNose: rig.nose.setStyle, focus, renderThumbnails,
+    texture, noseTextures, noseTexturesReady
+  };
 }

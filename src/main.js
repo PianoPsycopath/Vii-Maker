@@ -18,6 +18,7 @@ import { generatePackIcon, PACK_ICON_VILLAGER } from './PackIcon.js';
 import { PlazaScene } from './plaza.js';
 import { EditorState } from './core/EditorState.js';
 import { UIController } from './ui/UIController.js';
+import { ExportCarrier } from './ExportCarrier.js';
 
 function triggerDownload(content, filename) {
   const anchor = document.createElement('a');
@@ -41,6 +42,7 @@ class VillagerMakerApp {
     this.isRandomizing = false;
     // The crowd that was in the plaza when a villager was picked, so we can come back to the same plaza.
     this.plazaRoster = null;
+    this.carrier = null;
   }
 
   async initialize() {
@@ -62,6 +64,16 @@ class VillagerMakerApp {
       GEO: this.appData.GEO,
       M: this.appData.M,
       lookups: this.lookups
+    });
+
+    this.carrier = new ExportCarrier({
+      canvas: this.ui.elements.carryCanvas,
+      hoverTarget: this.ui.elements.shareBtn,
+      slots: this.ui.elements.carrySlots,
+      GEO: this.appData.GEO,
+      texture: this.viewer.texture,
+      noseTextures: this.viewer.noseTextures,
+      noseTexturesReady: this.viewer.noseTexturesReady
     });
 
     this.viewer.renderThumbnails().then(thumbs => this.ui.applyThumbnails(thumbs));
@@ -116,6 +128,8 @@ class VillagerMakerApp {
         this.state.filter = filter;
         this.ui.renderVillagerList(this.state, this.appData);
       },
+      onShareToggle: open => this.carrier?.setShareOpen(open),
+      onExportViewChange: (open, instant) => this.carrier?.setActive(open, instant),
       onTabChange: (focusTarget, instant) => {
         this.updatePreview();
         this.viewer.focus(focusTarget, instant);
@@ -158,6 +172,8 @@ class VillagerMakerApp {
     const simulation = this.getRenderedLook();
     this.viewer.setHeight(simulation.t);
     this.viewer.setNose(simulation.n);
+    this.carrier?.setHeight(simulation.t);
+    this.carrier?.setNose(simulation.n);
     this.viewer.compose(
       simulation,
       this.state.previewConfig,
