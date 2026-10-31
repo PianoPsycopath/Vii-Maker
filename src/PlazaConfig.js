@@ -18,7 +18,12 @@ export const PLAZA_CONFIG = {
   PARADE_DZ: -1,
   ARMS_ROT: 42.97,
   EDITOR_OFFSET: new THREE.Vector3(-2.6, 1.7, -4.2),
-  EDITOR_FOV: 32
+  EDITOR_FOV: 32,
+  GUST_FRAMES: 0,
+  GUST_FPS: 14,
+  GUST_SIZE: 4.2,
+  GUST_STAGGER: 0.35,
+  GUST_PEAK: 0.68
 };
 
 export const PlazaMath = {

@@ -5,9 +5,8 @@ import {
   COLOR_COUNT, EYE_COLORS, HAIR_COLOR_COUNT
 } from './data.js';
 import { initViewer } from './viewer.js';
-import { generateBedrockFiles, generateCSVText } from './exporter.js';
 import {
-  playSelect, playTab, playSave, toggleMute, loadMusic,
+  playSelect, playTab, playSave, playVillagerAccept, toggleMute, loadMusic,
   playIntro, startMusic, setMusicScene, setMusicEnabled, isMusicEnabled, loadSfx
 } from './sound.js';
 import {
@@ -39,6 +38,9 @@ class VillagerMakerApp {
     this.plazaApi = null;
     this.isParadeActive = false;
     this.iconComposer = null;
+    this.isRandomizing = false;
+    // The crowd that was in the plaza when a villager was picked, so we can come back to the same plaza.
+    this.plazaRoster = null;
   }
 
   async initialize() {
@@ -124,10 +126,9 @@ class VillagerMakerApp {
         this.syncApplication();
       },
       onReset: () => this.resetCurrentVillager(),
-      onRandomize: () => this.randomizeCurrentVillager(),
+      onRandomize: () => this.playRandomizeSequence(),
       onExportEdits: () => triggerDownload(this.appData.over, 'villager-edits.json'),
       onExportAll: () => this.exportAllVillagers(),
-      onExportCSV: () => this.exportCSV(),
       onExportRP: mode => this.exportBedrockRP(mode),
       onImportFile: file => this.importVillagerFile(file),
       onToggleParade: () => this.toggleParade(),
@@ -234,41 +235,136 @@ class VillagerMakerApp {
     }
   }
 
-  randomizeCurrentVillager() {
+  rollRandomLook(gender) {
     const randomInt = max => 1 + Math.floor(Math.random() * max);
     const randomEyeStyle = EYE_STYLES[randomInt(EYE_STYLES.length) - 1];
 
-    this.state.current.e = eyeIndex(randomEyeStyle, randomInt(EYE_COLORS));
-    this.state.current.o = randomInt(COLOR_COUNT);
-    this.state.current.t = randomInt(COLOR_COUNT);
-    this.state.current.n = randomInt(NOSE_STYLES.length) - 1;
-    this.state.current.sk = randomInt(SKIN_TONES.length) - 1;
-
-    const defaultGenderHair = this.state.current.k === 'f' ? 'alex' : 'ari';
+    const defaultGenderHair = gender === 'f' ? 'alex' : 'ari';
     const randomHairStyle = Math.random() < 0.05
       ? 'bald'
       : Math.random() < 0.5
         ? defaultGenderHair
         : HAIR_STYLES[randomInt(HAIR_STYLES.length) - 1];
 
-    this.state.current.h = hairIndex(randomHairStyle, randomInt(HAIR_COLOR_COUNT));
+    return {
+      e: eyeIndex(randomEyeStyle, randomInt(EYE_COLORS)),
+      o: randomInt(COLOR_COUNT),
+      t: randomInt(COLOR_COUNT),
+      n: randomInt(NOSE_STYLES.length) - 1,
+      sk: randomInt(SKIN_TONES.length) - 1,
+      h: hairIndex(randomHairStyle, randomInt(HAIR_COLOR_COUNT))
+    };
+  }
+
+  randomizeCurrentVillager() {
+    Object.assign(this.state.current, this.rollRandomLook(this.state.current.k));
     this.syncApplication();
+  }
+
+
+  async createGustPlaza(featured) {
+    const names = this.state.getAllNames().filter(name => this.state.lookup(name));
+    if (!names.length) return null;
+
+    const lookup = name => {
+      const record = this.state.lookup(name);
+      return name === featured && record ? { ...record, ...this.state.getRecord() } : record;
+    };
+
+    const elements = this.ui.preparePlazaDOM(true);
+    const plaza = new PlazaScene({
+      ...elements,
+      GEO: this.appData.GEO,
+      M: this.appData.M,
+      lookups: this.lookups,
+      names,
+      lookup,
+      featured,
+      count: 10,
+      parade: false,
+      interactive: false
+    });
+    await plaza.initialize();
+    elements.hintEl.remove();
+    return plaza;
+  }
+
+  async playRandomizeSequence() {
+    if (this.isRandomizing || this.plazaApi) return;
+    this.isRandomizing = true;
+
+    const launch = this.ui.beginDiceLaunch();
+    const featured = this.state.current.name && this.state.lookup(this.state.current.name) ? this.state.current.name : null;
+    let plaza = null;
+    let swap = null;
+
+    try {
+      try {
+        this.ui.setPlazaBodyState({ mode: true, hold: true, leaving: false, gust: true });
+        setMusicScene('plaza');
+        plaza = await this.createGustPlaza(featured);
+        if (!plaza) throw new Error('there are no villagers to show');
+
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        plaza.canvas.style.opacity = '';
+        await Promise.all([launch.rattled, new Promise(resolve => setTimeout(resolve, 500))]);
+      } catch (error) {
+        console.error('Randomize plaza failed', error);
+        this.ui.clearPlazaDOM();
+        plaza = null;
+        this.ui.setStatus(`Randomize could not open the plaza: ${error.message}`);
+      }
+
+      if (plaza) {
+        const reroll = plaza.prepareReroll((name, record) => this.rollRandomLook(record.k), featured)
+          .catch(error => console.error('Could not prepare the new looks', error));
+
+        const rolled = plaza.dropDice(launch.screen);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        launch.release();
+        await rolled;
+        await reroll;
+
+        await plaza.playGust({
+          onPeak: () => {
+            plaza.applyReroll();
+            this.randomizeCurrentVillager();
+            if (featured) swap = plaza.refreshActor(featured);
+          }
+        });
+        if (swap) await swap;
+        if (plaza.gustMissing) {
+          this.ui.setStatus('gust.png was not found (looked in img/, img/icons/, img/fx/, data/ and the site root), so the gust was skipped.');
+        }
+      } else {
+        this.randomizeCurrentVillager();
+      }
+
+      playVillagerAccept(1);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (plaza) {
+        plaza.canvas.style.opacity = '0';
+        plaza.labelsContainer.style.transition = 'opacity .4s ease';
+        plaza.labelsContainer.style.opacity = '0';
+      }
+      this.ui.setPlazaBodyState({ mode: false, hold: false, leaving: false, gust: false });
+      if (plaza) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        plaza.dispose();
+      }
+    } finally {
+      launch.restore();
+      setMusicScene('edit');
+      this.ui.setPlazaBodyState({ mode: false, hold: false, leaving: false, gust: false });
+      this.isRandomizing = false;
+    }
   }
 
   exportAllVillagers() {
     const allKeys = Object.keys({ ...this.appData.base, ...this.appData.over }).sort();
     const combined = Object.fromEntries(allKeys.map(name => [name, this.state.lookup(name)]));
     triggerDownload(combined, 'villagers-all.json');
-  }
-
-  exportCSV() {
-    const csvText = generateCSVText(
-      this.appData.base,
-      this.appData.over,
-      this.state.lookup.bind(this.state)
-    );
-    triggerDownload(csvText, 'Villager Names - Sheet1.csv');
-    this.ui.setStatus('Exported Villager Names - Sheet1.csv.');
   }
 
   async exportBedrockRP(mode = 'simple') {
@@ -378,7 +474,7 @@ class VillagerMakerApp {
     }
   }
 
-  launchPlaza(freshLoad = false) {
+  launchPlaza(freshLoad = false, restore = null) {
     const allNames = this.state.getAllNames().filter(name => this.state.lookup(name));
 
     if (!allNames.length) {
@@ -394,11 +490,13 @@ class VillagerMakerApp {
         GEO: this.appData.GEO,
         M: this.appData.M,
         lookups: this.lookups,
-        names: allNames,
-        lookup: this.state.lookup.bind(this.state),
+        names: restore ? restore.names : allNames,
+        lookup: restore ? restore.lookup : this.state.lookup.bind(this.state),
+        restore: restore ? restore.scene : null,
         count: 10,
         parade: this.isParadeActive,
-        onPick: (name, lookConfig) => {
+        onPick: (name, lookConfig, roster) => {
+          this.plazaRoster = roster;
           playSelect();
           setMusicScene('edit');
           this.ui.setPlazaBodyState({ leaving: true });
@@ -421,8 +519,24 @@ class VillagerMakerApp {
         }
       });
 
-      this.plazaApi.initialize();
-      if (freshLoad) {
+      const plaza = this.plazaApi;
+      const ready = plaza.initialize();
+      if (restore) {
+        plazaElements.labelsEl.style.visibility = 'hidden';
+        ready
+          .then(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+          .then(() => {
+            if (this.plazaApi === plaza && !plaza.isDisposed) this.revealRestoredPlaza(plazaElements, !!restore.scene.featured);
+          })
+          .catch(error => {
+            console.warn('Could not restore the plaza, starting a fresh one', error);
+            try { plaza.dispose(); } catch {}
+            if (this.plazaApi === plaza) this.plazaApi = null;
+            this.plazaRoster = null;
+            this.ui.setPlazaBodyState({ mode: true, hold: true, leaving: false });
+            this.launchPlaza(true);
+          });
+      } else if (freshLoad) {
         requestAnimationFrame(() => requestAnimationFrame(() => {
           plazaElements.canvas.style.opacity = '';
         }));
@@ -443,9 +557,49 @@ class VillagerMakerApp {
     return this.isParadeActive;
   }
 
+  buildPlazaRestore() {
+    if (!this.plazaRoster?.length) return null;
+    const { current, previewConfig, isShiftSimulated } = this.state;
+    const name = (current.name || '').trim();
+    const stage = this.ui.elements.stage.getBoundingClientRect();
+
+    const record = {
+      e: current.e, h: current.h, o: current.o, t: current.t, k: current.k,
+      s: current.s ? 1 : 0, n: current.n | 0, sk: current.sk | 0
+    };
+    const lookup = villager => (name && villager === name ? record : this.state.lookup(villager));
+    const names = this.state.getAllNames().filter(villager => lookup(villager));
+    if (name && !names.includes(name)) names.push(name);
+
+    return {
+      names,
+      lookup,
+      scene: {
+        roster: this.plazaRoster,
+        featured: name ? { name, previewConfig: { ...previewConfig }, simShift: isShiftSimulated } : null,
+        stageRect: { left: stage.left, top: stage.top, width: stage.width, height: stage.height }
+      }
+    };
+  }
+
+  revealRestoredPlaza({ canvas, labelsEl }, instant) {
+    this.ui.setPlazaBodyState({ mode: true, hold: true, leaving: false });
+    this.ui.openTab('tab-plaza', { quiet: true, instant: true });
+    if (instant) canvas.style.transition = 'none';
+    canvas.style.opacity = '';
+    labelsEl.style.visibility = '';
+    if (instant) requestAnimationFrame(() => { canvas.style.transition = ''; });
+  }
+
   reopenPlaza() {
     if (this.plazaApi) return;
     setMusicScene(this.isParadeActive ? 'parade' : 'plaza');
+
+    const restore = this.buildPlazaRestore();
+    if (restore) {
+      this.launchPlaza(true, restore);
+      return;
+    }
     this.ui.openTab('tab-plaza', { quiet: true, instant: true });
     this.ui.setPlazaBodyState({ mode: true, hold: true, leaving: false });
     this.launchPlaza(true);

@@ -4,7 +4,8 @@ import {
   COLOR_COUNT, BALD_HAIR_INDEX
 } from '../data.js';
 import { BIOME_NAMES } from '../tint.js';
-import { playSelect, playTab, playToggle, playRandom, playSave, playVillagerAccept } from '../sound.js';
+import { playSelect, playTab, playToggle, playSave, playVillagerAccept } from '../sound.js';
+import { ICONS } from './icons.js';
 import { fitTabIcons } from '../utils/iconFitter.js';
 import {
   bindHoverSounds, buildSwatchGrid, buildTextureGrid,
@@ -36,6 +37,7 @@ const ELEMENT_SELECTORS = {
   simShiftCheckbox: '#simShift',
   shiftInfo: '#shiftInfo',
   status: '#status',
+  exportStatus: '#exportStatus',
   nameInput: '#name',
   chip: '#chip',
   saveBtn: '#save',
@@ -68,17 +70,18 @@ const ELEMENT_SELECTORS = {
   skinGrid: '#skinG',
   tierSelect: '#tier',
   resetBtn: '#reset',
+  resetLabel: '#resetLabel',
+  shareBtn: '#shareBtn',
+  shareTree: '#shareTree',
   randomBtn: '#rand',
   exportModeSelect: '#expMode',
   exportRPBtn: '#expRP',
-  exportCSVBtn: '#expCSV',
   exportEditsBtn: '#exp',
   exportAllBtn: '#expAll',
   importBtn: '#imp',
   fileInput: '#file'
 };
 
-// The intro overlay is removed after first click and is null-guarded; every other element is required.
 const OPTIONAL_ELEMENTS = new Set(['introScreen']);
 
 const formatIdentifier = str => str.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
@@ -116,9 +119,16 @@ export class UIController {
 
   initialize() {
     fitTabIcons();
+    this.injectIcons();
     this.buildStaticGrids();
     this.bindEvents();
     bindHoverSounds(this.elements.body);
+  }
+
+  injectIcons() {
+    document.querySelectorAll('[data-icon]').forEach(slot => {
+      slot.innerHTML = ICONS[slot.dataset.icon] || '';
+    });
   }
 
   buildStaticGrids() {
@@ -328,15 +338,17 @@ export class UIController {
       callbacks.onReset();
     };
 
-    elements.randomBtn.onclick = () => {
-      playRandom();
-      playVillagerAccept(0.4);
-      callbacks.onRandomize();
+    elements.randomBtn.onclick = () => callbacks.onRandomize();
+
+    elements.shareBtn.onclick = () => {
+      playToggle();
+      const open = !elements.shareTree.classList.contains('open');
+      elements.shareTree.classList.toggle('open', open);
+      elements.shareBtn.setAttribute('aria-expanded', String(open));
     };
 
     elements.exportEditsBtn.onclick = () => { playSelect(); callbacks.onExportEdits(); };
     elements.exportAllBtn.onclick = () => { playSelect(); callbacks.onExportAll(); };
-    elements.exportCSVBtn.onclick = () => { playSelect(); callbacks.onExportCSV(); };
     elements.exportRPBtn.onclick = () => { playSave(); callbacks.onExportRP(elements.exportModeSelect.value); };
 
     if (typeof window.showDirectoryPicker !== 'function') {
@@ -379,6 +391,7 @@ export class UIController {
     });
 
     this.activeTab = targetId;
+    this.elements.body.classList.toggle('export-view', targetId === 'tab-export');
     const focusTarget = TAB_FOCUS_MAP[targetId] || 'full';
     this.callbacks.onTabChange(focusTarget, instant);
 
@@ -400,6 +413,41 @@ export class UIController {
 
   setStatus(message) {
     this.elements.status.textContent = message;
+    this.elements.exportStatus.textContent = message;
+  }
+
+  beginDiceLaunch() {
+    const icon = this.elements.randomBtn.querySelector('.big-ico');
+    const rect = icon.getBoundingClientRect();
+    const copy = icon.cloneNode(true);
+    copy.classList.add('dice-launch');
+    copy.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:95;margin:0;pointer-events:none;filter:none;`;
+    document.body.append(copy);
+    icon.style.visibility = 'hidden';
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const rattle = copy.animate([
+      { transform: 'rotate(0deg) scale(1)' },
+      { transform: 'rotate(-9deg) scale(1.08)' },
+      { transform: 'rotate(8deg) scale(1.08)' },
+      { transform: 'rotate(-6deg) scale(1.04)' },
+      { transform: 'rotate(4deg) scale(1.02)' },
+      { transform: 'rotate(0deg) scale(1)' }
+    ], { duration: reduce ? 1 : 480, easing: 'ease-in-out' });
+
+    return {
+      screen: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, width: rect.width },
+      rattled: rattle.finished.then(() => undefined),
+      release: () => copy.remove(),
+      restore: () => {
+        copy.remove();
+        icon.style.visibility = '';
+        icon.animate(
+          [{ transform: 'scale(.6)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }],
+          { duration: reduce ? 1 : 380, easing: 'ease-out' }
+        );
+      }
+    };
   }
 
   sync(state, simulation, appData) {
@@ -485,7 +533,7 @@ export class UIController {
   }
 
   syncDirtyStatus(state, appData) {
-    const { chip, resetBtn } = this.elements;
+    const { chip, resetLabel } = this.elements;
     const name = state.current.name;
     const exists = !!state.lookup(name);
     const isEdited = !!appData.over[name];
@@ -502,7 +550,7 @@ export class UIController {
             ? 'Edited'
             : 'From sheet';
 
-    resetBtn.textContent = isEdited && appData.base[name]
+    resetLabel.textContent = isEdited && appData.base[name]
       ? 'Reset to sheet'
       : isEdited
         ? 'Delete'
@@ -597,11 +645,12 @@ export class UIController {
 
   clearPlazaDOM() {
     document.querySelectorAll('#plazaCv, #plazaLabels, #plazaHint').forEach(el => el.remove());
-    this.elements.body.classList.remove('plaza-mode', 'plaza-hold', 'plaza-leaving');
+    this.elements.body.classList.remove('plaza-mode', 'plaza-hold', 'plaza-leaving', 'plaza-gust');
   }
 
-  setPlazaBodyState({ mode, hold, leaving }) {
+  setPlazaBodyState({ mode, hold, leaving, gust }) {
     const { classList } = this.elements.body;
+    if (gust !== undefined) classList.toggle('plaza-gust', gust);
     if (mode !== undefined) classList.toggle('plaza-mode', mode);
     if (hold !== undefined) classList.toggle('plaza-hold', hold);
     if (leaving !== undefined) classList.toggle('plaza-leaving', leaving);

@@ -13,8 +13,11 @@ const FACING_TOLERANCE = 0.6;
 const PIXEL = 1 / 16;
 
 export class VillagerActor {
-  constructor(name, startX, startZ, startYaw, sceneContext) {
+  constructor(name, startX, startZ, startYaw, sceneContext, options = {}) {
     this.name = name;
+    this.presetConfig = options.previewConfig ? { ...options.previewConfig } : null;
+    this.simShift = options.simShift !== false;
+    this.pinned = false;
     this.x = startX;
     this.z = startZ;
     this.yaw = startYaw;
@@ -47,14 +50,14 @@ export class VillagerActor {
     const noseTextures = await noseTexturesReady;
 
     this.record = lookup(this.name);
-    this.previewConfig = {
+    this.previewConfig = this.presetConfig || {
       prof: PlazaMath.getRandomInt(PREVIEW_RANGE.prof),
       biome: PlazaMath.getRandomInt(PREVIEW_RANGE.biome),
       tier: PlazaMath.getRandomInt(PREVIEW_RANGE.tier),
       skin: PlazaMath.getRandomInt(PREVIEW_RANGE.skin)
     };
     this.simulation = computeInGameLook(
-      this.name, this.record, this.previewConfig.prof, this.previewConfig.skin, this.previewConfig.biome, true
+      this.name, this.record, this.previewConfig.prof, this.previewConfig.skin, this.previewConfig.biome, this.simShift
     );
 
     this.scaleFactor = heightScale(this.simulation.t) * BASE_SCALE;

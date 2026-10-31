@@ -176,22 +176,53 @@
       </div>
 
       <div class="sec tab-content" id="tab-export" hidden>
-        <div class="lab">Manage &amp; Export</div>
-        <div class="acts">
-          <button id="reset" class="mii-btn">Reset to Sheet</button>
-          <button id="rand" class="mii-btn">🎲 Randomize</button>
-          <select id="expMode" aria-label="Bedrock export mode">
+        <div class="lab">Export</div>
+        <div class="export-grid">
+          <button class="big-btn primary" id="expRP" title="Export the villager entity, render controllers, geometry and (weave/full) textures">
+            <span class="big-ico mask-ico" style="--src:url('/img/icons/wi-fi.png')"></span>
+            <span class="big-text"><span class="big-label">Export Bedrock RP</span><span class="big-sub">Entity, render controllers, geometry</span></span>
+          </button>
+          <select id="expMode" class="export-mode" aria-label="Bedrock export mode">
             <option value="simple" title="One zip with the entity, render controllers and geometry JSON files">Simple: JSON + geometry zip</option>
             <option value="weave" title="Write straight into an existing resource pack folder. Overwrites files except manifest.json">Weave: into existing pack</option>
             <option value="full" title="A standalone resource pack with manifest and every texture">Full: .mcaddon with textures</option>
           </select>
-          <button class="mii-btn gold" id="expRP" title="Export the villager entity, render controllers, geometry and (weave/full) textures">Export Bedrock RP</button>
-          <button id="expCSV" class="mii-btn" title="Export full Villager Names CSV including edits">Export CSV</button>
-          <button id="exp" class="mii-btn">Export Edits</button>
-          <button id="expAll" class="mii-btn">Export All</button>
-          <button id="imp" class="mii-btn">Import</button>
-          <input type="file" id="file" accept=".json,.csv" hidden>
+
+          <button class="big-btn" id="shareBtn" aria-expanded="false" aria-controls="shareTree" title="Share villager edits">
+            <span class="big-ico mask-ico" style="--src:url('/img/icons/share.png')"></span>
+            <span class="big-label">Share</span>
+          </button>
+          <button class="big-btn dice" id="rand" title="Randomize this villager">
+            <span class="big-ico" data-icon="dice"></span>
+            <span class="big-label">Randomize</span>
+          </button>
+          <button class="big-btn" id="reset" title="Undo your edits to this villager">
+            <span class="big-ico mask-ico" style="--src:url('/img/icons/undo.png')"></span>
+            <span class="big-label" id="resetLabel">Reset</span>
+          </button>
+
+          <div class="share-tree" id="shareTree">
+            <div class="tree-inner">
+              <div class="tree-node" style="--i:0">
+                <button class="tree-btn" id="exp" title="Download only the villagers you changed">
+                  <span class="tree-ico mask-ico" style="--src:url('/img/icons/share.png')"></span><span>Export Edits</span>
+                </button>
+              </div>
+              <div class="tree-node" style="--i:1">
+                <button class="tree-btn" id="expAll" title="Download every villager, edited or not">
+                  <span class="tree-ico mask-ico" style="--src:url('/img/icons/share.png')"></span><span>Export All</span>
+                </button>
+              </div>
+              <div class="tree-node" style="--i:2">
+                <button class="tree-btn" id="imp" title="Load a villager JSON export or sheet CSV">
+                  <span class="tree-ico mask-ico flip" style="--src:url('/img/icons/share.png')"></span><span>Import</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+        <input type="file" id="file" accept=".json,.csv" hidden>
+        <div class="export-status" id="exportStatus" role="status" aria-live="polite"></div>
       </div>
     </aside>
   </div>

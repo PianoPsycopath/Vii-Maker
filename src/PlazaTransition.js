@@ -90,3 +90,88 @@ export class PlazaTransition {
     }
   }
 }
+
+const RETURN_DURATION = 1.75;
+
+export class PlazaReturn {
+  constructor(options) {
+    this.camera = options.camera;
+    this.hero = options.hero;
+    this.targets = options.actors.filter((actor) => actor !== this.hero);
+    this.environment = options.environment;
+    this.onComplete = options.onComplete;
+    this.viewportWidth = options.viewportWidth;
+    this.viewportHeight = options.viewportHeight;
+
+    this.homePos = options.homePos.clone();
+    this.homeTarget = options.homeTarget.clone();
+    this.homeFov = options.homeFov;
+
+    const rect = options.stageRect;
+    this.posEditor = new THREE.Vector3(this.hero.x, 0, this.hero.z).add(PLAZA_CONFIG.EDITOR_OFFSET);
+    this.targetEditor = new THREE.Vector3(this.hero.x, 1, this.hero.z);
+    const fovHalfRad = PlazaMath.degreesToRadians(PLAZA_CONFIG.EDITOR_FOV / 2);
+    this.fovEditor = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(fovHalfRad) * (this.viewportHeight / rect.height)));
+    this.offsetX = this.viewportWidth / 2 - (rect.left + rect.width / 2);
+    this.offsetY = this.viewportHeight / 2 - (rect.top + rect.height / 2);
+
+    this.startTime = null;
+    this.isComplete = false;
+  }
+
+  update(currentTime) {
+    if (this.isComplete) return;
+    if (this.startTime === null) this.startTime = currentTime;
+    const elapsed = (currentTime - this.startTime) / 1000;
+    if (elapsed >= RETURN_DURATION) {
+      this.finish();
+      return;
+    }
+
+    const f = RETURN_DURATION - elapsed;
+    const others = 1 - PlazaMath.clamp01(f / 0.55);
+    for (const actor of this.targets) {
+      if (actor.isGone) continue;
+      actor.setOpacity(others);
+      actor.shadowMesh.material.opacity = others;
+      actor.tagElement.style.opacity = others;
+    }
+
+    this.environment.setFloorOpacity(1 - PlazaMath.clamp01(f / 0.9));
+    this.hero.shadowMesh.material.opacity = 1 - PlazaMath.clamp01((f - 0.8) / 0.6);
+    this.hero.tagElement.style.opacity = 1 - PlazaMath.clamp01(f / 0.35);
+    this.hero.yaw = 0;
+    this.hero.armBlend = 1;
+
+    const progress = PlazaMath.easeCubicInOut(PlazaMath.clamp01((f - 0.1) / 1.5));
+    this.camera.position.lerpVectors(this.homePos, this.posEditor, progress);
+    const target = new THREE.Vector3().lerpVectors(this.homeTarget, this.targetEditor, progress);
+    this.camera.fov = this.homeFov + (this.fovEditor - this.homeFov) * progress;
+    this.camera.setViewOffset(
+      this.viewportWidth, this.viewportHeight,
+      this.offsetX * progress, this.offsetY * progress,
+      this.viewportWidth, this.viewportHeight
+    );
+    this.camera.lookAt(target);
+  }
+
+  finish() {
+    this.camera.position.copy(this.homePos);
+    this.camera.fov = this.homeFov;
+    this.camera.clearViewOffset();
+    this.camera.lookAt(this.homeTarget);
+
+    this.environment.setFloorOpacity(1);
+    for (const actor of this.targets) {
+      if (actor.isGone) continue;
+      actor.setOpacity(1);
+      actor.shadowMesh.material.opacity = 1;
+      actor.tagElement.style.opacity = '';
+    }
+    this.hero.shadowMesh.material.opacity = 1;
+    this.hero.tagElement.style.opacity = '';
+
+    this.isComplete = true;
+    if (this.onComplete) this.onComplete();
+  }
+}
