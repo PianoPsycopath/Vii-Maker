@@ -1,6 +1,6 @@
 import { computeInGameLook, NOSE_STYLES, noseGeoName } from './data.js';
 import { BIOME_NAMES, TEX } from './tint.js';
-import { loadTextures } from './packExport.js';
+import { loadTextures } from './PackExport.js';
 
 export const PACK_ICON_VILLAGER = { name: 'Joshua', profession: 'farmer', biome: 'plains', skin: 0 };
 
