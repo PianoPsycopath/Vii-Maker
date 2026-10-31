@@ -15,6 +15,7 @@ export const HEX = {
   'orange': '#f28a1b', 'red': '#d02a22'
 };
 
+
 export const EYEHEX = {
   amber: '#c68a1c', black: '#1a1a1a', blue: '#3a6fd0', brown: '#6a4125',
   cyan: '#25b5c5', gray: '#8a8f96', grayblue: '#6c85a0', green: '#3f9b4f',
@@ -44,6 +45,10 @@ export const NOSE_COUNT = NOSE_STYLES.length;
 export const noseGeoName = s => `geometry.villager_nose_${s}`;
 
 export const SKINS = ['#f6d2b0', '#eebb92', '#d9a077', '#b87d57', '#8a5a3b', '#5d3b27'];
+
+export const COLOR_COUNT = 34;
+export const HAIR_COLOR_COUNT = 35;
+export const BALD_HAIR_INDEX = 72;
 
 // Eye styles: 34 colors per style (1..34 = default, 35..68 = wide, etc.)
 export const EYE_COLORS = 34;
@@ -324,6 +329,9 @@ export async function loadAppData() {
   const persist = () => {
     try { localStorage.setItem(KEY, JSON.stringify(over)); } catch {}
   };
+  
 
   return { M, GEO, base, over, persist };
+
+  
 }

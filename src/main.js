@@ -1,7 +1,8 @@
 import {
   clamp, createLookups, eyeStyle, eyeColor, eyeIndex, EYE_STYLES, EYE_MAX,
   hairStyle, hairColor, hairIndex, HAIR_STYLES, HAIR_MAX,
-  sheetToRecords, computeInGameLook, loadAppData, NOSE_STYLES, SKIN_TONES
+  sheetToRecords, computeInGameLook, loadAppData, NOSE_STYLES, SKIN_TONES,
+  COLOR_COUNT, EYE_COLORS, HAIR_COLOR_COUNT
 } from './data.js';
 import { initViewer } from './viewer.js';
 import { generateBedrockFiles, generateCSVText } from './exporter.js';
@@ -9,13 +10,16 @@ import {
   playSelect, playTab, playSave, toggleMute, loadMusic,
   playIntro, startMusic, setMusicScene, setMusicEnabled, isMusicEnabled, loadSfx
 } from './sound.js';
+import { zipSync, strToU8 } from 'fflate';
 import { PlazaScene } from './plaza.js';
 import { EditorState } from './core/EditorState.js';
 import { UIController } from './ui/UIController.js';
 
+const toFileText = content => (typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+
 function triggerDownload(content, filename) {
   const anchor = document.createElement('a');
-  const payload = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+  const payload = content instanceof Uint8Array ? content : toFileText(content);
   anchor.href = URL.createObjectURL(new Blob([payload], { type: 'application/octet-stream' }));
   anchor.download = filename;
   anchor.click();
@@ -230,9 +234,9 @@ class VillagerMakerApp {
     const randomInt = max => 1 + Math.floor(Math.random() * max);
     const randomEyeStyle = EYE_STYLES[randomInt(EYE_STYLES.length) - 1];
 
-    this.state.current.e = eyeIndex(randomEyeStyle, randomInt(34));
-    this.state.current.o = randomInt(34);
-    this.state.current.t = randomInt(34);
+    this.state.current.e = eyeIndex(randomEyeStyle, randomInt(EYE_COLORS));
+    this.state.current.o = randomInt(COLOR_COUNT);
+    this.state.current.t = randomInt(COLOR_COUNT);
     this.state.current.n = randomInt(NOSE_STYLES.length) - 1;
     this.state.current.sk = randomInt(SKIN_TONES.length) - 1;
 
@@ -243,7 +247,7 @@ class VillagerMakerApp {
         ? defaultGenderHair
         : HAIR_STYLES[randomInt(HAIR_STYLES.length) - 1];
 
-    this.state.current.h = hairIndex(randomHairStyle, randomInt(35));
+    this.state.current.h = hairIndex(randomHairStyle, randomInt(HAIR_COLOR_COUNT));
     this.syncApplication();
   }
 
@@ -272,23 +276,25 @@ class VillagerMakerApp {
       this.lookups
     );
 
-    triggerDownload(entityJson, 'villager_v2.entity.json');
-    setTimeout(() => triggerDownload(rcJson, 'villager_v2.render_controllers.json'), 250);
+    const files = {
+      'villager_v2.entity.json': strToU8(toFileText(entityJson)),
+      'villager_v2.render_controllers.json': strToU8(toFileText(rcJson))
+    };
 
     const noseGeos = Object.fromEntries(
       Object.entries(this.appData.GEO).filter(([key]) => key.startsWith('geometry.villager_nose_'))
     );
     if (Object.keys(noseGeos).length) {
-      setTimeout(() => {
-        triggerDownload(
-          { format_version: this.appData.GEO.format_version || '1.8.0', ...noseGeos },
-          'villager_nose.geo.json'
-        );
-      }, 500);
+      files['villager_nose.geo.json'] = strToU8(toFileText({
+        format_version: this.appData.GEO.format_version || '1.8.0',
+        ...noseGeos
+      }));
     }
 
+    triggerDownload(zipSync(files), 'villager_bedrock_rp.zip');
+
     this.ui.setStatus(
-      `Exported Bedrock RP files (${stats.regularCount} shifted regulars + ${stats.specialCount} locked specials).`
+      `Exported villager_bedrock_rp.zip (${stats.regularCount} shifted regulars + ${stats.specialCount} locked specials).`
     );
   }
 
@@ -310,8 +316,8 @@ class VillagerMakerApp {
       const parsedRecord = {
         e: clamp(rec.e, 1, EYE_MAX),
         h: clamp(rec.h, 0, HAIR_MAX),
-        o: clamp(rec.o, 1, 34),
-        t: clamp(rec.t, 1, 34),
+        o: clamp(rec.o, 1, COLOR_COUNT),
+        t: clamp(rec.t, 1, COLOR_COUNT),
         k: rec.k || 'm',
         ...(rec.s ? { s: 1 } : {}),
         ...(rec.n ? { n: clamp(rec.n, 0, NOSE_STYLES.length - 1) } : {}),
@@ -321,7 +327,6 @@ class VillagerMakerApp {
       if (this.appData.base[key] && JSON.stringify(this.appData.base[key]) === JSON.stringify(parsedRecord)) {
         delete this.appData.over[key];
       } else {
-        this.appData.over[key];
         this.appData.over[key] = parsedRecord;
       }
       importedCount++;
@@ -337,8 +342,7 @@ class VillagerMakerApp {
   }
 
   launchPlaza(freshLoad = false) {
-    const allNames = [...new Set([...Object.keys(this.appData.base), ...Object.keys(this.appData.over)])]
-      .filter(name => this.state.lookup(name));
+    const allNames = this.state.getAllNames().filter(name => this.state.lookup(name));
 
     if (!allNames.length) {
       this.ui.setPlazaBodyState({ mode: false, hold: false, leaving: false });

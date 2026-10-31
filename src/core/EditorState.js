@@ -8,6 +8,9 @@ import {
   EYE_STYLES,
   HAIR_STYLES,
   NOSE_STYLES,
+  COLOR_COUNT,
+  HAIR_COLOR_COUNT,
+  BALD_HAIR_INDEX,
   shiftOffsets
 } from '../data.js';
 
@@ -32,10 +35,6 @@ import {
  * @property {number} tier
  * @property {number} skin
  */
-
-const COLOR_MODULO = 34;
-const HAIR_COLOR_MODULO = 35;
-const BALD_HAIR_INDEX = 72;
 
 /**
  * Inverse modular shift: maps a displayed value back to the base CSV value.
@@ -102,6 +101,16 @@ export class EditorState {
       return { ...this.baseData[name], ...this.overrides[name] };
     }
     return this.baseData[name];
+  }
+
+  /**
+   * All villager names across base data and overrides.
+   * @param {{ sorted?: boolean }} [options]
+   * @returns {string[]}
+   */
+  getAllNames({ sorted = false } = {}) {
+    const names = [...new Set([...Object.keys(this.baseData), ...Object.keys(this.overrides)])];
+    return sorted ? names.sort((a, b) => a.localeCompare(b)) : names;
   }
 
   /**
@@ -183,11 +192,11 @@ export class EditorState {
     );
 
     if (patch.o != null) {
-      this.current.o = invertShift(patch.o, unnamedO, COLOR_MODULO);
+      this.current.o = invertShift(patch.o, unnamedO, COLOR_COUNT);
     }
 
     if (patch.t != null) {
-      this.current.t = invertShift(patch.t, unnamedT, COLOR_MODULO);
+      this.current.t = invertShift(patch.t, unnamedT, COLOR_COUNT);
     }
 
     if (patch.n != null) {
@@ -199,7 +208,7 @@ export class EditorState {
       const targetColor = eyeColor(patch.e);
       const targetStyleIdx = Math.max(0, EYE_STYLES.indexOf(targetStyle));
       const baseStyleIdx = invertIndex(targetStyleIdx, unnamedEyeStyleIdx, EYE_STYLES.length);
-      const baseColor = invertShift(targetColor, unnamedE, COLOR_MODULO);
+      const baseColor = invertShift(targetColor, unnamedE, COLOR_COUNT);
       this.current.e = eyeIndex(EYE_STYLES[baseStyleIdx], baseColor);
     }
 
@@ -212,7 +221,7 @@ export class EditorState {
         const targetColor = hairColor(patch.h) || 16;
         const targetStyleIdx = Math.max(0, HAIR_STYLES.indexOf(targetStyle));
         const baseStyleIdx = invertIndex(targetStyleIdx, unnamedStyleIdx, HAIR_STYLES.length);
-        const baseColor = invertShift(targetColor, unnamedC, HAIR_COLOR_MODULO);
+        const baseColor = invertShift(targetColor, unnamedC, HAIR_COLOR_COUNT);
         this.current.h = hairIndex(HAIR_STYLES[baseStyleIdx], baseColor);
       }
     }

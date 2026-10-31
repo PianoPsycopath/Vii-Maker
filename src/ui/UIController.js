@@ -1,6 +1,7 @@
 import {
   HEX, SKINS, eyeStyle, eyeRange, EYE_STYLES,
-  hairStyle, hairRange, HAIR_STYLES, NOSE_STYLES, SKIN_TONES
+  hairStyle, hairRange, HAIR_STYLES, NOSE_STYLES, SKIN_TONES,
+  COLOR_COUNT, BALD_HAIR_INDEX
 } from '../data.js';
 import { BIOME_NAMES } from '../tint.js';
 import { playSelect, playTab, playToggle, playRandom, playSave, playVillagerAccept } from '../sound.js';
@@ -24,6 +25,61 @@ const TAB_FOCUS_MAP = {
   'tab-export': 'full'
 };
 
+const ELEMENT_SELECTORS = {
+  introScreen: '#introScreen',
+  paradeBtn: '#paradeBtn',
+  musicBtn: '#musicBtn',
+  soundBtn: '#soundBtn',
+  stage: '#stage',
+  canvas: '#cv',
+  spinCheckbox: '#spin',
+  simShiftCheckbox: '#simShift',
+  shiftInfo: '#shiftInfo',
+  status: '#status',
+  nameInput: '#name',
+  chip: '#chip',
+  saveBtn: '#save',
+  viewPlazaBtn: '#viewPlaza',
+  searchInput: '#q',
+  countLabel: '#count',
+  listContainer: '#list',
+  typeLabel: '#typeL',
+  genderSegment: '#genderS',
+  specialBtn: '#specBtn',
+  heightLabel: '#htL',
+  heightSlider: '#ht',
+  skinToneLabel: '#skinToneL',
+  skinToneGrid: '#skinToneG',
+  noseLabel: '#noseL',
+  noseSegment: '#noseS',
+  eyesLabel: '#eyesL',
+  eyesSegment: '#eyesS',
+  eyesGrid: '#eyesG',
+  hairLabel: '#hairL',
+  hairSegment: '#hairS',
+  hairGrid: '#hairG',
+  outfitLabel: '#outL',
+  outfitGrid: '#outG',
+  profLabel: '#profL',
+  profGrid: '#profG',
+  biomeLabel: '#biomeL',
+  biomeGrid: '#biomeG',
+  skinLabel: '#skinL',
+  skinGrid: '#skinG',
+  tierSelect: '#tier',
+  resetBtn: '#reset',
+  randomBtn: '#rand',
+  exportRPBtn: '#expRP',
+  exportCSVBtn: '#expCSV',
+  exportEditsBtn: '#exp',
+  exportAllBtn: '#expAll',
+  importBtn: '#imp',
+  fileInput: '#file'
+};
+
+// The intro overlay is removed after first click and is null-guarded; every other element is required.
+const OPTIONAL_ELEMENTS = new Set(['introScreen']);
+
 const formatIdentifier = str => str.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 const capitalize = str => str[0].toUpperCase() + str.slice(1);
 const formatHairStyle = str => (str === 'bald' ? 'Bald' : capitalize(str));
@@ -42,59 +98,19 @@ export class UIController {
   }
 
   queryElements() {
-    const $ = selector => document.querySelector(selector);
-    return {
-      body: document.body,
-      introScreen: $('#introScreen'),
-      paradeBtn: $('#paradeBtn'),
-      musicBtn: $('#musicBtn'),
-      soundBtn: $('#soundBtn'),
-      stage: $('#stage'),
-      canvas: $('#cv'),
-      spinCheckbox: $('#spin'),
-      simShiftCheckbox: $('#simShift'),
-      shiftInfo: $('#shiftInfo'),
-      status: $('#status'),
-      nameInput: $('#name'),
-      chip: $('#chip'),
-      saveBtn: $('#save'),
-      viewPlazaBtn: $('#viewPlaza'),
-      searchInput: $('#q'),
-      countLabel: $('#count'),
-      listContainer: $('#list'),
-      typeLabel: $('#typeL'),
-      genderSegment: $('#genderS'),
-      specialBtn: $('#specBtn'),
-      heightLabel: $('#htL'),
-      heightSlider: $('#ht'),
-      skinToneLabel: $('#skinToneL'),
-      skinToneGrid: $('#skinToneG'),
-      noseLabel: $('#noseL'),
-      noseSegment: $('#noseS'),
-      eyesLabel: $('#eyesL'),
-      eyesSegment: $('#eyesS'),
-      eyesGrid: $('#eyesG'),
-      hairLabel: $('#hairL'),
-      hairSegment: $('#hairS'),
-      hairGrid: $('#hairG'),
-      outfitLabel: $('#outL'),
-      outfitGrid: $('#outG'),
-      profLabel: $('#profL'),
-      profGrid: $('#profG'),
-      biomeLabel: $('#biomeL'),
-      biomeGrid: $('#biomeG'),
-      skinLabel: $('#skinL'),
-      skinGrid: $('#skinG'),
-      tierSelect: $('#tier'),
-      resetBtn: $('#reset'),
-      randomBtn: $('#rand'),
-      exportRPBtn: $('#expRP'),
-      exportCSVBtn: $('#expCSV'),
-      exportEditsBtn: $('#exp'),
-      exportAllBtn: $('#expAll'),
-      importBtn: $('#imp'),
-      fileInput: $('#file')
-    };
+    const elements = { body: document.body };
+    const missing = [];
+
+    for (const [key, selector] of Object.entries(ELEMENT_SELECTORS)) {
+      const element = document.querySelector(selector);
+      elements[key] = element;
+      if (!element && !OPTIONAL_ELEMENTS.has(key)) missing.push(selector);
+    }
+
+    if (missing.length) {
+      throw new Error(`UIController: missing required DOM elements: ${missing.join(', ')}`);
+    }
+    return elements;
   }
 
   initialize() {
@@ -142,7 +158,7 @@ export class UIController {
 
     buildSwatchGrid(
       elements.outfitGrid,
-      Array.from({ length: 34 }, (_, index) => ({
+      Array.from({ length: COLOR_COUNT }, (_, index) => ({
         val: index + 1,
         hex: HEX[manifest.colors[index]],
         title: `${index + 1} ${manifest.colors[index]}`
@@ -399,10 +415,10 @@ export class UIController {
     const currentHairStyle = hairStyle(simulation.h);
     const baseHairStyle = hairStyle(current.h);
     const shownHairText = currentHairStyle === 'bald'
-      ? 'bald (72)'
+      ? `bald (${BALD_HAIR_INDEX})`
       : `${simulation.h} · ${currentHairStyle} ${lookups.hairName(simulation.h)}`;
     const baseHairText = baseHairStyle === 'bald'
-      ? 'bald (72)'
+      ? `bald (${BALD_HAIR_INDEX})`
       : `Base ${current.h} · ${baseHairStyle} ${lookups.hairName(current.h)}`;
     elements.hairLabel.textContent = simulation.h !== current.h
       ? `${shownHairText} (${baseHairText})`
@@ -489,13 +505,13 @@ export class UIController {
   renderVillagerList(state, appData) {
     const { searchInput, countLabel, listContainer } = this.elements;
     const query = searchInput.value.trim().toLowerCase();
-    const allNames = [...new Set([...Object.keys(appData.base), ...Object.keys(appData.over)])]
-      .sort((a, b) => a.localeCompare(b));
+    const allNames = state.getAllNames({ sorted: true });
 
     const matches = allNames.filter(name => {
       const matchesSearch = !query || name.toLowerCase().includes(query);
+      const record = state.lookup(name);
       const matchesFilter = state.filter === 'all' ||
-        (state.filter === 'edited' ? appData.over[name] : state.lookup(name).s);
+        (state.filter === 'edited' ? appData.over[name] : record?.s);
       return matchesSearch && matchesFilter;
     });
 
