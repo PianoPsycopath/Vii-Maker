@@ -20,7 +20,8 @@ export const PROF_THEMES = {
   nitwit:        { main: '#3b6e38', trim: '#294d26', style: 'robe' }
 };
 
-const TEXTURE_FORMATS = ['tga', 'png'];
+const PNG_FIRST = /(?:\/villager(?:_skin)?|-shoes|\/levels\/[^/]+)$/;
+const formatsFor = basePath => (PNG_FIRST.test(basePath) ? ['png', 'tga'] : ['tga', 'png']);
 const TIER_COLORS = ['#7f8386', '#d8d8d8', '#f5cc27', '#17dd62', '#33ebcb'];
 
 export function drawProfessionStandIn(profId, tierIdx, showTier) {
@@ -126,7 +127,7 @@ export function createComposer({ M, lookups }) {
   const loaders = { tga: loadTGA, png: loadPNG };
 
   const loadFirstAvailable = async basePath => {
-    for (const extension of TEXTURE_FORMATS) {
+    for (const extension of formatsFor(basePath)) {
       const asset = await loaders[extension](`${basePath}.${extension}`);
       if (asset) return asset;
     }
