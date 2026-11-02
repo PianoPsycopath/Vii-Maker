@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE_35, TINT, BIOME_NAMES, TEX, hexToFloats, applyOverlayTint } from './tint.js';
-import { SKINS, eyeStyle, hairStyle, hairColor, NOSE_STYLES, SKIN_TONES } from './data.js';import { parseTGA } from './tga.js';
+import { SKINS, eyeStyle, hairStyle, hairColor, NOSE_STYLES, SKIN_TONES } from './data.js';
+import { parseTGA } from './tga.js';
 
 export const PROF_THEMES = {
   farmer:        { main: '#8b5a2b', trim: '#e6c24f', style: 'overalls', hat: '#d8b45c' },
@@ -19,6 +20,7 @@ export const PROF_THEMES = {
   nitwit:        { main: '#3b6e38', trim: '#294d26', style: 'robe' }
 };
 
+const TEXTURE_FORMATS = ['tga', 'png'];
 const TIER_COLORS = ['#7f8386', '#d8d8d8', '#f5cc27', '#17dd62', '#33ebcb'];
 
 export function drawProfessionStandIn(profId, tierIdx, showTier) {
@@ -121,19 +123,22 @@ export function createComposer({ M, lookups }) {
     }
   };
 
+  const loaders = { tga: loadTGA, png: loadPNG };
+
+  const loadFirstAvailable = async basePath => {
+    for (const extension of TEXTURE_FORMATS) {
+      const asset = await loaders[extension](`${basePath}.${extension}`);
+      if (asset) return asset;
+    }
+    return null;
+  };
+
   const load = path => {
     if (!path) return Promise.resolve(null);
-    const cleanPath = path.replace(/\.(png|tga)$/i, '');
-    
-    if (!cache.has(cleanPath)) {
-      cache.set(cleanPath, (async () => {
-        if (cleanPath.includes('/professions/')) {
-          return (await loadTGA(cleanPath + '.tga')) || (await loadPNG(cleanPath + '.png'));
-        }
-        return (await loadPNG(cleanPath + '.png')) || (await loadTGA(cleanPath + '.tga'));
-      })());
-    }
-    return cache.get(cleanPath);
+    const basePath = path.replace(/\.(png|tga)$/i, '');
+
+    if (!cache.has(basePath)) cache.set(basePath, loadFirstAvailable(basePath));
+    return cache.get(basePath);
   };
 
   function tint(img, rgb, config) {
