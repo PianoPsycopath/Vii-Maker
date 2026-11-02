@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { buildVillagerGeometry, createNoseRig } from './geometry.js';
-import { PLAZA_CONFIG } from './PlazaConfig.js';
+import { PLAZA_CONFIG } from './plaza/PlazaConfig.js';
 
 export const BASE_SCALE = 0.9375;
 

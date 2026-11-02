@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { computeInGameLook, heightScale } from './data.js';
 import { createNoseRig } from './geometry.js';
-import { PLAZA_CONFIG, PlazaMath } from './PlazaConfig.js';
+import { PLAZA_CONFIG, PlazaMath } from './plaza/PlazaConfig.js';
 import { BASE_SCALE, createBodyMesh, createBonePart, createEntityMaterial, createPixelTexture } from './rig.js';
 
 const PREVIEW_RANGE = { prof: 15, biome: 7, tier: 5, skin: 6 };

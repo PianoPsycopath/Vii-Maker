@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { heightScale, NOSE_STYLES } from './data.js';
-import { PLAZA_CONFIG } from './PlazaConfig.js';
+import { PLAZA_CONFIG } from './plaza/PlazaConfig.js';
 import { createComposer, loadNoseTextures } from './composer.js';
 import { BASE_SCALE, createPixelTexture, createStaticRig } from './rig.js';
 import { renderThumbnailSets } from './thumbnails.js';
