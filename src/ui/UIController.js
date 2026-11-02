@@ -6,7 +6,7 @@ import { DEFAULT_FOCUS, DEFAULT_TAB, EXPORT_TAB, TAB_FOCUS } from './constants.j
 import { queryElements } from './dom.js';
 import { bindEvents } from './bindEvents.js';
 import { beginDiceLaunch } from './diceLaunch.js';
-import { EditorGrids } from './Editorgrids.js';
+import { EditorGrids } from './EditorGrids.js';
 import { EditorSync } from './EditorSync.js';
 import { ExportLayout } from './ExportLayout.js';
 import { PlazaView } from './PlazaView.js';
