@@ -34,6 +34,31 @@ The result is a pure resource pack (no behavior packs or scripts required) that 
 * **Audio Feedback**  
   Optional music and SFX toggles for a more polished editor experience.
 
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <img src="https://github.com/user-attachments/assets/921794ab-6e2b-4e31-bdd8-6c481a56f0e2" width="100%" alt="Scale 1"><br>
+      <em>Plaza</em>
+    </td>
+    <td width="50%" align="center">
+      <img src="https://github.com/user-attachments/assets/4b7c93ed-ceb2-4f5d-9ce8-d3f23e3c932a" width="100%" alt="Scale 2"><br>
+      <em>Parade</em>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="https://github.com/user-attachments/assets/fa465441-6f59-432c-8e34-f0e7c69a5866" width="100%" alt="Scale 3"><br>
+      <em>Editor</em>
+    </td>
+    <td width="50%" align="center">
+      <img src="https://github.com/user-attachments/assets/5aefa2a2-9d54-4a8a-b62e-e7046fb02955" width="100%" alt="Scale 4"><br>
+      <em>Profession and Skins</em>
+    </td>
+  </tr>
+</table>
+
+
+
 ## Technical Highlights
 
 * Built with **Vite** + modern ES modules.
