@@ -598,7 +598,6 @@ body.export-instant #edit, body.export-instant #exportPanel, body.export-instant
   grid-column: 1 / -1;
   flex-direction: row; justify-content: flex-start; gap: 18px;
   min-height: 112px; padding: 14px 24px;
-  font-size: 24px;
   background: linear-gradient(180deg, #ffd747, #f0a800);
   border-color: #a87000; color: #3b2a00; text-shadow: none;
 }
@@ -614,13 +613,13 @@ body.export-instant #edit, body.export-instant #exportPanel, body.export-instant
 .big-btn.dice .big-ico { width: 72px; height: 72px; }
 
 /* Share: three buttons drop out of it like tree nodes. */
-.share-tree {
+.pack-tree {
   grid-column: 1 / -1;
   display: grid; grid-template-rows: 0fr;
   visibility: hidden;
   transition: grid-template-rows .35s ease, visibility 0s .35s;
 }
-.share-tree.open { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .35s ease, visibility 0s; }
+.pack-tree.open { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows .35s ease, visibility 0s; }
 .tree-inner { position: relative; min-height: 0; overflow: hidden; padding: 0 0 0 56px; }
 .tree-inner::before {
   content: ""; position: absolute; left: 26px; top: 0; bottom: 36px; width: 4px;
@@ -628,7 +627,7 @@ body.export-instant #edit, body.export-instant #exportPanel, body.export-instant
   transform: scaleY(0); transform-origin: top;
   transition: transform .3s ease;
 }
-.share-tree.open .tree-inner::before { transform: scaleY(1); transition-delay: .05s; }
+.pack-tree.open .tree-inner::before { transform: scaleY(1); transition-delay: .05s; }
 
 .tree-node {
   position: relative; margin-top: 10px;
@@ -639,7 +638,7 @@ body.export-instant #edit, body.export-instant #exportPanel, body.export-instant
   content: ""; position: absolute; left: -30px; top: 50%; width: 30px; height: 4px; margin-top: -2px;
   background: var(--mc-chrome-dark); border-radius: 2px;
 }
-.share-tree.open .tree-node {
+.pack-tree.open .tree-node {
   opacity: 1; transform: none;
   transition: opacity .25s ease, transform .35s cubic-bezier(.22, 1.25, .36, 1);
   transition-delay: calc(var(--i) * 80ms + 120ms);
