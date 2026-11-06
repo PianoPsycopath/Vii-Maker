@@ -186,8 +186,12 @@ export class PlazaScene {
       homeFov: this.homeFov,
       onComplete: () => {
         hero.isFrozen = false;
+        hero.pinned = false;
         hero.state = 'idle';
         hero.timer = PlazaMath.getRandomFloat(1.2, 2.5);
+        if (this.parade.active) {
+          this.parade.assign(hero);
+        }
       }
     });
   }
