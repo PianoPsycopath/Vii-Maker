@@ -188,14 +188,14 @@
             <span class="big-text"><span class="big-label">Export Bedrock RP</span><span class="big-sub">Entity, render controllers, geometry</span></span>
           </button>
           <select id="expMode" class="export-mode" aria-label="Bedrock export mode">
+            <option value="full" title="A standalone resource pack with manifest and every texture">Full: .mcaddon with textures</option>
             <option value="simple" title="One zip with the entity, render controllers and geometry JSON files">Simple: JSON + geometry zip</option>
             <option value="weave" title="Write straight into an existing resource pack folder. Overwrites files except manifest.json">Weave: into existing pack</option>
-            <option value="full" title="A standalone resource pack with manifest and every texture">Full: .mcaddon with textures</option>
           </select>
 
           <button class="big-btn" id="packBtn" aria-expanded="false" aria-controls="packTree" title="Share villager edits">
             <span class="big-ico carry-icon"><canvas id="carryCv" aria-hidden="true"></canvas></span>
-            <span class="big-label">Share</span>
+            <span class="big-label">Export/Import Edits</span>
           </button>
           <button class="big-btn dice" id="rand" title="Randomize this villager">
             <span class="big-ico" data-icon="dice"></span>

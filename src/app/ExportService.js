@@ -28,7 +28,7 @@ export class ExportService {
     triggerDownload(Object.fromEntries(names.map(name => [name, this.state.lookup(name)])), 'villagers-all.json');
   }
 
-  async exportBedrockRP(mode = 'simple') {
+  async exportBedrockRP(mode = 'full') {
     try {
       const root = mode === 'weave' ? await pickResourcePackRoot() : null;
       const { json, texturePaths, stats } = this.buildFiles();
