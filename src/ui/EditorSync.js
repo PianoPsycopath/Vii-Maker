@@ -9,12 +9,12 @@ function chipText({ name, exists, dirty, edited }) {
   if (!name) return 'Unnamed Preview';
   if (!exists) return dirty ? 'New · unsaved' : 'New';
   if (dirty) return 'Unsaved changes';
-  return edited ? 'Edited' : 'From sheet';
+  return edited ? 'Edited' : 'Default';
 }
 
 function resetText({ edited, hasBase }) {
   if (!edited) return 'Reset';
-  return hasBase ? 'Reset to sheet' : 'Delete';
+  return hasBase ? 'Reset to Default' : 'Delete';
 }
 
 export class EditorSync {
